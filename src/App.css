@@ -1,0 +1,82 @@
+/* Basic layout styling to mimic a clean news site vibe */
+
+:root {
+  --bg: #f7f7f9;
+  --text: #222;
+  --muted: #666;
+  --primary: #2563eb;
+  --fake: #d90429;
+  --not-fake: #118a25;
+  --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+.layout { max-width: clamp(320px, 96vw, 1100px); margin: 0 auto; background: white; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding-left: 8px; padding-right: 8px; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff; z-index: 10; }
+.brand a { font-weight: 700; font-size: 18px; color: var(--primary); text-decoration: none; }
+.nav a { margin-left: 12px; color: var(--muted); text-decoration: none; }
+.nav a.active { color: var(--primary); font-weight: 600; }
+.main { padding: 16px; }
+.footer { padding: 12px 16px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; }
+
+.container { display: grid; gap: 12px; }
+.toolbar { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.filters button { border: 1px solid var(--border); padding: 6px 10px; margin-right: 6px; background:#fff; cursor: pointer; }
+.filters button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-size select { margin: 0 6px; }
+.report-btn { background: var(--primary); color: #fff; padding: 6px 10px; text-decoration: none; border-radius: 4px; }
+
+.news-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: 1fr; }
+.news-card { border: 1px solid var(--border); border-radius: 6px; padding: 12px; background: #fff; height: 100%; overflow: hidden; }
+.card-header { display:flex; align-items:center; justify-content: space-between; }
+.title { margin: 0; font-size: 18px; }
+.title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-body { max-width: 72ch; }
+.status { font-size: 12px; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border); }
+.status.fake { background: #ffe5ea; color: var(--fake); border-color: #fecdd3; }
+.status.not-fake { background: #e6ffed; color: var(--not-fake); border-color: #bbf7d0; }
+.status.undecided { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+.summary { color: var(--muted); line-height: 1.5; word-break: break-word; }
+/* 限制摘要显示行数，避免卡片过高 */
+.summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 6; /* 显示最多6行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: calc(1.5em * 6);
+}
+.meta { color: var(--muted); display:flex; gap: 12px; }
+.actions { margin-top: 8px; display:flex; gap: 8px; }
+.btn { border: 1px solid var(--border); padding: 6px 10px; text-decoration: none; color: var(--text); border-radius: 4px; background:#fff; }
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.detail .title { font-size: 22px; }
+.detail .cover { width: 100%; max-height: 420px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+.results { display:flex; align-items:center; gap: 8px; }
+.chip { display:inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid var(--border); }
+.chip.fake { background: #ffe5ea; color: var(--fake); border-color: #fecdd3; }
+.chip.not-fake { background: #e6ffed; color: var(--not-fake); border-color: #bbf7d0; }
+
+.comments { margin-top: 16px; }
+.comments-header { display:flex; align-items:center; justify-content: space-between; }
+.comment-list { list-style:none; padding:0; display:grid; gap:12px; }
+.comment { border:1px solid var(--border); border-radius:6px; padding:10px; background:#fff; }
+.comment-meta { display:flex; gap:12px; color:var(--muted); align-items:center; }
+.comment-img { max-width: 320px; border-radius:4px; border:1px solid var(--border); }
+
+.pagination { display:flex; align-items:center; justify-content:center; gap:8px; padding:8px; }
+.pagination button { padding:6px 10px; border:1px solid var(--border); background:#fff; cursor:pointer; }
+
+.form { display:grid; gap:12px; }
+.form-row { display:grid; gap:6px; }
+.form-row input, .form-row textarea, .form-row select { padding:8px; border:1px solid var(--border); border-radius:4px; }
+
+/* 响应式：在较宽屏幕上使用多列布局，充分利用右侧空间 */
+@media (min-width: 900px) {
+  .news-list { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1400px) {
+  .news-list { grid-template-columns: repeat(3, 1fr); }
+}
