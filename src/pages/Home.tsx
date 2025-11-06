@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore, formatDate } from "../store";
 import { useI18n } from "../i18n";
@@ -9,7 +9,16 @@ export default function HomePage() {
   const { state, getStatus, clearImported } = useStore();
   const { lang, setLang, t } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
-  const [pageSize, setPageSize] = useState<number>(10);
+  // 记忆“每页显示”设置，返回主页后保持用户选择
+  const [pageSize, setPageSize] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem("home_page_size");
+      const n = raw ? Number(raw) : 10;
+      return [5, 10, 20].includes(n) ? n : 10;
+    } catch {
+      return 10;
+    }
+  });
   const [page, setPage] = useState<number>(1);
 
   // 统一计算当前所有新闻的状态，确保过滤与展示使用同一份数据
@@ -46,6 +55,11 @@ export default function HomePage() {
     setPage(Math.min(Math.max(1, p), totalPages));
   };
 
+  // 每次用户调整每页显示数量时进行持久化
+  useEffect(() => {
+    try { localStorage.setItem("home_page_size", String(pageSize)); } catch {}
+  }, [pageSize]);
+
   return (
     <div className="container">
       <div className="toolbar">
@@ -77,6 +91,7 @@ export default function HomePage() {
             setPage(1);
           }
         }}>{t('clearImported')} ({state.news.filter(n=>!!n.link).length})</button>
+        {/* 预设投票已在启动时自动补齐为约20条，此处不再提供按钮 */}
       </div>
 
       <ul className="news-list">
@@ -90,6 +105,10 @@ export default function HomePage() {
                 <h3 className="title">{n.title}</h3>
                 <span className={`status ${status === "Fake" ? "fake" : status === "Not Fake" ? "not-fake" : "undecided"}`}>{statusLabel}</span>
               </div>
+              {/* 仅对预设/非RSS导入的新闻展示封面（RSS导入通常自带正文图，且可能过多）*/}
+              {!n.link && n.imageUrl && (
+                <img className="card-cover" src={n.imageUrl} alt={n.title} />
+              )}
               <div className="card-body">
                 <p className="summary">{n.summary}</p>
                 <div className="meta">

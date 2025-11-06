@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 import type { News, Vote, VoteCounts, VoteChoice, NewsStatus } from "./types";
 import { importRSSItems } from "./rss";
+
+// 每次刷新/启动自动导入的新闻条数
+const AUTO_IMPORT_COUNT = 20;
 
 type State = {
   news: News[];
@@ -10,7 +13,8 @@ type State = {
 type Action =
   | { type: "ADD_NEWS"; payload: Omit<News, "id" | "createdAt"> & { createdAt?: string } }
   | { type: "ADD_VOTE"; payload: Omit<Vote, "id" | "createdAt"> & { createdAt?: string } }
-  | { type: "CLEAR_IMPORTED" };
+  | { type: "CLEAR_IMPORTED" }
+  | { type: "BOOST_SEED_VOTES"; payload: { min: number; max: number } };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -41,6 +45,39 @@ function reducer(state: State, action: Action): State {
         if (keptIds.has(id)) nextVotes[id] = v;
       }
       return { news: kept, votesByNews: nextVotes };
+    }
+    case "BOOST_SEED_VOTES": {
+      const { min, max } = action.payload;
+      const nextVotes: Record<number, Vote[]> = { ...state.votesByNews };
+      for (const n of state.news) {
+        // 仅针对预设/非RSS导入的新闻（没有 link）做补充
+        if (n.link) continue;
+        const arr = nextVotes[n.id] ?? [];
+        const target = Math.max(min, Math.min(max, min + Math.floor(Math.random() * (max - min + 1))));
+        if (arr.length >= target) { nextVotes[n.id] = arr; continue; }
+        const need = target - arr.length;
+        const base = arr.length;
+        const additions: Vote[] = Array.from({ length: need }).map((_, j) => {
+          const createdAt = new Date(Date.now() - (base + j + 1) * 7e5).toISOString();
+          const choice: VoteChoice = Math.random() < 0.5 ? "fake" : "not_fake";
+          const hasComment = (j % 2 === 0) || (j % 5 === 0);
+          return {
+            id: `${n.id}-boost-${base + j}-${Math.random().toString(36).slice(2)}`,
+            newsId: n.id,
+            choice,
+            comment: hasComment ? (
+              j % 4 === 0
+                ? "数据来源：官方公告/媒体报道，欢迎补充更多线索。"
+                : "个人观点，仅供参考，建议结合更多证据判断。"
+            ) : undefined,
+            imageUrl: (j % 7 === 0) ? `https://picsum.photos/seed/boost_${n.id}_${base + j}/320/180` : undefined,
+            voter: ["UserA", "UserB", "UserC", "UserD", "UserE"][j % 5],
+            createdAt,
+          } as Vote;
+        });
+        nextVotes[n.id] = [...additions, ...arr];
+      }
+      return { ...state, votesByNews: nextVotes };
     }
     default:
       return state;
@@ -81,20 +118,22 @@ function seedNews(count = 24): News[] {
 function seedVotes(news: News[]): Record<number, Vote[]> {
   const votes: Record<number, Vote[]> = {};
   for (const n of news) {
-    const sample = Math.floor(Math.random() * 6); // 0..5 votes
+    const sample = 18 + Math.floor(Math.random() * 6); // 18..23 votes ≈20
     votes[n.id] = Array.from({ length: sample }).map((_, j) => {
       const choice: VoteChoice = Math.random() < 0.5 ? "fake" : "not_fake";
-      const createdAt = new Date(Date.now() - (j + 1) * 12e5).toISOString();
+      const createdAt = new Date(Date.now() - (j + 1) * 8e5).toISOString();
+      const hasComment = j % 2 === 0 || j % 5 === 0; // 提升评论密度
       return {
         id: `${n.id}-${j}-${Math.random().toString(36).slice(2)}`,
         newsId: n.id,
         choice,
-        comment:
-          j % 2 === 0
-            ? "Providing context and links to support the vote."
-            : undefined,
-        imageUrl: j % 3 === 0 ? `https://picsum.photos/seed/vote_${n.id}_${j}/320/180` : undefined,
-        voter: ["UserA", "UserB", "UserC"][j % 3],
+        comment: hasComment ? (
+          j % 4 === 0
+            ? "数据来源：官方公告/媒体报道，欢迎补充更多线索。"
+            : "个人观点，仅供参考，建议结合更多证据判断。"
+        ) : undefined,
+        imageUrl: j % 7 === 0 ? `https://picsum.photos/seed/vote_${n.id}_${j}/320/180` : undefined,
+        voter: ["UserA", "UserB", "UserC", "UserD", "UserE"][j % 5],
         createdAt,
       } as Vote;
     });
@@ -139,6 +178,7 @@ const StoreContext = createContext<{
   getStatus: (newsId: number) => NewsStatus;
   getComments: (newsId: number) => Vote[];
   clearImported: () => void;
+  boostSeedVotes: (min?: number, max?: number) => void;
 } | null>(null);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -154,6 +194,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ) => dispatch({ type: "ADD_VOTE", payload });
 
     const clearImported = () => dispatch({ type: "CLEAR_IMPORTED" });
+
+    const boostSeedVotes = (min = 18, max = 23) => dispatch({ type: "BOOST_SEED_VOTES", payload: { min, max } });
 
     const getVoteCounts = (newsId: number): VoteCounts => {
       const arr = state.votesByNews[newsId] ?? [];
@@ -180,7 +222,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return arr.filter((v) => v.comment && v.comment.trim().length > 0);
     };
 
-    return { addNews, addVote, getVoteCounts, getStatus, getComments, clearImported };
+    return { addNews, addVote, getVoteCounts, getStatus, getComments, clearImported, boostSeedVotes };
   }, [state]);
 
   // Persist to localStorage on every change
@@ -188,19 +230,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     saveToStorage(state);
   }, [state]);
 
-  // Auto import 20 RSS items on mount, with simple de-dup by link
+  // Auto import RSS items on mount, with simple de-dup by link
   useEffect(() => {
+    // 防止在 React StrictMode 下开发环境中 useEffect 触发两次导致重复导入
+    const ranRef = (StoreProvider as any)._autoImportOnceRef ?? ((StoreProvider as any)._autoImportOnceRef = { current: false });
+    if (ranRef.current) return;
+    ranRef.current = true;
     const existingLinks = new Set<string>();
     for (const n of state.news) if (n.link) existingLinks.add(n.link);
     const run = async () => {
       try {
-        await importRSSItems({ count: 20, existingLinks, addNews });
+        await importRSSItems({
+          count: AUTO_IMPORT_COUNT,
+          existingLinks,
+          addNews: (payload) => dispatch({ type: "ADD_NEWS", payload }),
+        });
       } catch (e) {
         // best-effort; ignore
         console.warn("RSS auto import failed", e);
       }
     };
     run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ensure preset (non-RSS) news have ~20 votes on startup
+  useEffect(() => {
+    const ranRef = (StoreProvider as any)._boostVotesOnceRef ?? ((StoreProvider as any)._boostVotesOnceRef = { current: false });
+    if (ranRef.current) return;
+    ranRef.current = true;
+    try {
+      dispatch({ type: "BOOST_SEED_VOTES", payload: { min: 18, max: 23 } });
+    } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

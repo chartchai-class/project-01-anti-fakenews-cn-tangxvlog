@@ -54,6 +54,8 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
 .detail .title { font-size: 22px; }
 .detail .cover { width: 100%; max-height: 420px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+/* 首页卡片封面图：等比裁剪，避免撑出横向滚动 */
+.card-cover { width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); margin: 8px 0; display:block; }
 .results { display:flex; align-items:center; gap: 8px; }
 .chip { display:inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid var(--border); }
 .chip.fake { background: #ffe5ea; color: var(--fake); border-color: #fecdd3; }
