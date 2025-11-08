@@ -6,7 +6,6 @@ import router from './router'
 import { createStore, StoreSymbol } from './store'
 import { createI18n, I18nSymbol } from './i18n'
 import { inject as injectAnalytics } from '@vercel/analytics'
-import { injectSpeedInsights } from '@vercel/speed-insights'
 
 const app = createApp(App)
 
@@ -25,4 +24,3 @@ app.mount('#app')
 
 // Vercel Analytics & Speed Insights (works across frameworks)
 injectAnalytics()
-injectSpeedInsights()

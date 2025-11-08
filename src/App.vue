@@ -1,5 +1,6 @@
 <template>
   <div class="layout">
+    <SpeedInsights />
     <div v-show="state.progressActive" class="top-progress"><div class="bar" :style="{ width: state.progressValue + '%' }"></div></div>
     <header class="header">
       <div class="brand">
@@ -29,6 +30,7 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { useI18n } from './i18n'
 import { useStore } from './store'
+import SpeedInsights from './components/SpeedInsights.vue'
 
 const { t, lang, setLang } = useI18n()
 const { state } = useStore()
