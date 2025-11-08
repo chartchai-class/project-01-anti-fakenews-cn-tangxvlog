@@ -261,6 +261,8 @@ export function createStore() {
   primeSeedStatuses()
   // Optional randomization to vary counts
   boostSeedVotes(18, 24)
+  // Pre-populate engagement so news already has likes/votes/comments from different users
+  randomizeEngagement({ likeMin: 12, likeMax: 48, voteMin: 10, voteMax: 26, commentRate: 0.5, imageRate: 0.18 })
   if (autoImport) {
     // Intentionally left as a no-op here to avoid网络错误日志; manual import page handles RSS
   }
