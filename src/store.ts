@@ -74,7 +74,16 @@ function createSeedNews(): InternalNews[] {
 
 export function createStore() {
   const news = ref<InternalNews[]>(createSeedNews())
-  const votes = ref<Vote[]>([])
+  const initVotes = () => {
+    try {
+      const raw = localStorage.getItem('votes')
+      const parsed = raw ? JSON.parse(raw) as Vote[] : []
+      // basic validation: ensure array elements have required fields
+      if (Array.isArray(parsed)) return parsed.filter((v) => typeof (v as any).newsId === 'number' && (v as any).choice)
+      return []
+    } catch { return [] }
+  }
+  const votes = ref<Vote[]>(initVotes())
   const initLikes = () => {
     try {
       const raw = localStorage.getItem('likes_by_news')
@@ -105,6 +114,9 @@ export function createStore() {
 
   const persistLikes = () => {
     try { localStorage.setItem('likes_by_news', JSON.stringify(likesByNews.value)) } catch {}
+  }
+  const persistVotes = () => {
+    try { localStorage.setItem('votes', JSON.stringify(votes.value)) } catch {}
   }
 
   const addNews = (n: { title: string; summary: string; content: string; reporter: string; imageUrl?: string }) => {
@@ -150,6 +162,7 @@ export function createStore() {
       createdAt: new Date().toISOString(),
     }
     votes.value = [item, ...votes.value]
+    persistVotes()
   }
 
   const getVoteCounts = (newsId: number): VoteCounts => {
@@ -179,6 +192,7 @@ export function createStore() {
     news.value = keep
     // drop votes associated with removed imported news
     votes.value = votes.value.filter((v) => !removedIds.has(v.newsId))
+    persistVotes()
   }
 
   const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -243,6 +257,7 @@ export function createStore() {
       }
     }
     persistLikes()
+    persistVotes()
   }
 
   // Expose a simple state object
@@ -257,9 +272,18 @@ export function createStore() {
   // Optional: auto import RSS is disabled by default; can be re-enabled via env
   const autoImport = String((import.meta as any).env?.VITE_AUTO_IMPORT_RSS || '').toLowerCase() === 'true'
   // Initialize demo votes to make half of seeds show different statuses
-  primeSeedStatuses()
-  // Optional randomization to vary counts
-  boostSeedVotes(18, 24)
+  if (votes.value.length === 0) {
+    primeSeedStatuses()
+    // Optional randomization to vary counts
+    boostSeedVotes(18, 24)
+    // Auto random engagement only when no prior votes
+    randomizeEngagement({ likeMin: 5, likeMax: 60, voteMin: 8, voteMax: 24, commentRate: 0.35, imageRate: 0.12 })
+  }
+  // Ensure homepage shows random likes when none exist (without adding votes/comments)
+  const hasAnyLikes = () => Object.values(likesByNews.value).some((x) => (typeof x === 'number') && x > 0)
+  if (!hasAnyLikes()) {
+    randomizeEngagement({ likeMin: 5, likeMax: 60, voteMin: 0, voteMax: 0, commentRate: 0, imageRate: 0 })
+  }
   if (autoImport) {
     // Intentionally left as a no-op here to avoid网络错误日志; manual import page handles RSS
   }
