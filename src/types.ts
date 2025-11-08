@@ -10,6 +10,15 @@ export interface News {
   imageUrl?: string;
   source?: string; // 来源（RSS 站点名）
   link?: string; // 原文链接
+  translations?: {
+    en?: {
+      title: string;
+      summary: string;
+      content: string;
+      reporter?: string;
+      source?: string;
+    }
+  };
 }
 
 export interface Vote {

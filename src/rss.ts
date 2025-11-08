@@ -4,6 +4,7 @@ import type { News } from "./types";
 export async function fetchRSS(url: string) {
   const proxies = [
     (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    (u: string) => `https://allorigins.hexlet.app/raw?url=${encodeURIComponent(u)}`,
     // r.jina.ai 可对任意URL做转发，支持https/http
     (u: string) => `https://r.jina.ai/http/${u}`,
     // isomorphic-git 的简易CORS代理（只支持https）
@@ -27,7 +28,15 @@ export async function fetchRSS(url: string) {
       // 尝试下一个代理
     }
   }
-  throw new Error(`RSS获取失败（所有代理均不可用）: ${errors.map((e: any) => e?.message ?? String(e)).join(" | ")}`);
+  const toMessage = (e: unknown) => {
+    if (typeof e === 'object' && e && 'message' in e) {
+      // Narrow to an object with optional message
+      const msg = (e as { message?: unknown }).message;
+      return String(msg ?? '') || String(e);
+    }
+    return String(e);
+  };
+  throw new Error(`RSS获取失败（所有代理均不可用）: ${errors.map(toMessage).join(" | ")}`);
 }
 
 export function parseRSS(xmlText: string) {
