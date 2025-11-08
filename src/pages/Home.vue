@@ -42,6 +42,7 @@
         <div style="display:flex; gap:8px; align-items:center">
           <RouterLink class="btn" :to="`/news/${n.id}`">{{ t('details') }}</RouterLink>
           <RouterLink class="btn" :to="`/news/${n.id}/vote`">{{ t('vote') }}</RouterLink>
+          <a v-if="n.link" class="btn" :href="n.link" target="_blank" rel="noopener">View Original</a>
           <button class="btn" @click="onLike(n.id)">👍 {{ likes(n.id) }}</button>
         </div>
       </div>
@@ -108,22 +109,27 @@ const counts = computed(() => {
   return { fake, notFake }
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize.value)))
-const current = computed(() => {
-  const arr = filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
+// 先根据语言映射并过滤，再计算分页与当前列表，避免出现空白页
+const localizedList = computed(() => {
   const L = lang.value as 'zh' | 'en'
-  const localized = arr.map((n: any) => {
+  const mapped = filtered.value.map((n: any) => {
     const x = localize(n, L)
     return { ...n, title: x.title, summary: x.summary, content: x.content, reporter: x.reporter, source: x.source }
   })
+  // 英文界面下不再强制过滤中文内容，避免导入的中文RSS条目被隐藏
   if (L === 'en') {
-    const isEnglish = (s?: string) => !s || !/[\u4e00-\u9fa5]/.test(s)
-    return localized.filter((n: any) => isEnglish(n.title) && isEnglish(n.summary))
+    return mapped
   }
-  return localized
+  return mapped
 })
 
-watch([filtered, pageSize], () => { page.value = 1 })
+const totalPages = computed(() => Math.max(1, Math.ceil(localizedList.value.length / pageSize.value)))
+const current = computed(() => {
+  return localizedList.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
+})
+
+// 语言变化时也重置页码，避免当前页超出总页数
+watch([filtered, pageSize, lang], () => { page.value = 1 })
 
 const setFilter = (f: Filter) => { filter.value = f }
 const onPageSizeChange = (e: Event) => {

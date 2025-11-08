@@ -25,7 +25,7 @@ import { useStore } from '../store'
 import { useI18n } from '../i18n'
 import { fetchRSS, parseRSS } from '../rss'
 
-const { addNews, state } = useStore()
+const { addNewsImported, state } = useStore()
 const { t } = useI18n()
 
 const presets = [
@@ -57,7 +57,7 @@ const submit = async () => {
     let added = 0
     for (const it of items) {
       if (it.link && existing.has(it.link)) continue
-      addNews(it)
+      addNewsImported(it)
       added += 1
     }
     message.value = `Imported ${added} items.`

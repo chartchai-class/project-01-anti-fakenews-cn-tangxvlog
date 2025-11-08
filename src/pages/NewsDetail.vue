@@ -12,6 +12,7 @@
       <p>{{ L?.content }}</p>
       <div style="display:flex; gap:8px; margin:8px 0">
         <RouterLink class="btn" :to="`/news/${n.id}/vote`">{{ t('goVoteAddComment') }}</RouterLink>
+        <a v-if="n && n.link" class="btn" :href="n.link" target="_blank" rel="noopener">View Original</a>
       </div>
 
       <h3 style="margin-top:16px">{{ t('voteResults') }}</h3>
