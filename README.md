@@ -1,3 +1,23 @@
+#team-members:20232099 , 20232036 ,  20232037
+# project-name:anti-fakenews-cn-tangxvlog
+# https://vercel.com/nikos-projects-dc92ede8/project-01-anti-fakenews-cn-tangxvlog
+# https://project-01-anti-fakenews-cn-tangxvl.vercel.app/
+# github-repo:https://github.com/chartchai-class/project-01-anti-fakenews-cn-tangxvlog/tree/main
+
+# https://youtu.be/tvGE1qv8hbs
+
+
+
+
+
+
+
+
+
+
+
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
